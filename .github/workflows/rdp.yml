@@ -1,0 +1,44 @@
+name: Windows RDP via Tailscale
+
+on:
+  workflow_dispatch:
+
+jobs:
+  rdp:
+    runs-on: windows-latest
+    timeout-minutes: 350
+
+    steps:
+      - name: Connexion au tailnet
+        uses: tailscale/github-action@v4
+        with:
+          authkey: ${{ secrets.TS_AUTHKEY }}
+
+      - name: Activer le Bureau a distance
+        shell: pwsh
+        run: |
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name fDenyTSConnections -Value 0
+          Enable-NetFirewallRule -DisplayGroup 'Remote Desktop'
+          Set-Service -Name TermService -StartupType Automatic
+          Start-Service TermService
+
+      - name: Definir le mot de passe
+        shell: pwsh
+        env:
+          ADMIN_PASS: ${{ secrets.ADMIN_PASS }}
+        run: |
+          $p = ConvertTo-SecureString $env:ADMIN_PASS -AsPlainText -Force
+          Set-LocalUser -Name runneradmin -Password $p
+          Add-LocalGroupMember -Group 'Remote Desktop Users' -Member runneradmin -ErrorAction SilentlyContinue
+
+      - name: Afficher les infos de connexion
+        shell: pwsh
+        run: |
+          Write-Host "=== ADRESSE POUR SE CONNECTER ==="
+          & 'C:\Program Files\Tailscale\tailscale.exe' ip -4
+          & 'C:\Program Files\Tailscale\tailscale.exe' status
+          Write-Host "Utilisateur : runneradmin"
+
+      - name: Garder la session active
+        shell: pwsh
+        run: Start-Sleep -Seconds 20000
