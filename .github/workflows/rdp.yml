@@ -36,7 +36,6 @@ jobs:
         run: |
           Write-Host "=== ADRESSE POUR SE CONNECTER ==="
           & 'C:\Program Files\Tailscale\tailscale.exe' ip -4
-          & 'C:\Program Files\Tailscale\tailscale.exe' status
           Write-Host "Utilisateur : runneradmin"
 
       - name: Garder la session active
