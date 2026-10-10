@@ -9,10 +9,14 @@ jobs:
     timeout-minutes: 350
 
     steps:
-      - name: Connexion au tailnet
-        uses: tailscale/github-action@v4
-        with:
-          authkey: ${{ secrets.TS_AUTHKEY }}
+      - name: Installer et connecter Tailscale
+        shell: pwsh
+        env:
+          TS_KEY: ${{ secrets.TS_AUTHKEY }}
+        run: |
+          Invoke-WebRequest -Uri "https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe" -OutFile "ts.exe"
+          Start-Process -FilePath ".\ts.exe" -ArgumentList "/quiet" -Wait
+          & "C:\Program Files\Tailscale\tailscale.exe" up --authkey=$env:TS_KEY --unattended
 
       - name: Activer le Bureau a distance
         shell: pwsh
@@ -34,9 +38,11 @@ jobs:
       - name: Afficher les infos de connexion
         shell: pwsh
         run: |
-          Write-Host "=== ADRESSE POUR SE CONNECTER ==="
-          & 'C:\Program Files\Tailscale\tailscale.exe' ip -4
+          Write-Host "=========================================="
+          Write-Host "IP Tailscale :"
+          & "C:\Program Files\Tailscale\tailscale.exe" ip -4
           Write-Host "Utilisateur : runneradmin"
+          Write-Host "=========================================="
 
       - name: Garder la session active
         shell: pwsh
